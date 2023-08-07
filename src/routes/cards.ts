@@ -5,7 +5,7 @@ import {
   Router
 } from 'express'
 import fs from 'node:fs'
-import { param, validationResult } from 'express-validator'
+import { body, param, validationResult } from 'express-validator'
 import multer from 'multer'
 import db from '../db'
 
@@ -15,7 +15,7 @@ function checkErrors (req: Request, res: Response, next: NextFunction) {
     next()
     return
   }
-  res.send({ errors: result.array() })
+  res.status(400).send({ errors: result.array() })
 }
 
 const storage = multer.diskStorage({
@@ -33,43 +33,63 @@ const router = Router()
 
 router.get('/', (req, res) => {
   void (async () => {
-    const result = await db.selectFrom('card').selectAll().execute()
+    const result = await db.selectFrom('card').selectAll().orderBy('card.card_id').execute()
     res.send(result)
   })()
 })
 
+router.all('/:id', param('id').exists().isInt({ min: 0 }), checkErrors)
+
 router.put(
   '/:id',
-  param('id').isNumeric().exists(),
+  body('rarity').exists().isInt({ min: 1, max: 5 }),
   checkErrors,
   (req, res) => {
-    res.sendStatus(201)
+    void (async () => {
+      try {
+        await db.insertInto('card').values({ card_id: Number(req.params.id), rarity: req.body.rarity }).execute()
+        res.sendStatus(201)
+      } catch (error) {
+        res.sendStatus(500)
+      }
+    })()
   }
 )
 
+// router.delete('/:id',
+//   (req, res) => {
+//     res.sendStatus(201)
+//   })
+
+router.all('/images/:id', param('id').exists().isInt({ min: 0 }), checkErrors)
+
 router.put(
   '/images/:id',
-  param('id').isNumeric().exists(),
-  checkErrors,
   upload.single('image'),
   (req, res) => {
     res.sendStatus(201)
   }
 )
 
+router.all('/images/:id', (req, res, next) => {
+  if (!fs.existsSync(`./cards/${req.params.id}.png`)) {
+    res.sendStatus(404)
+    return
+  }
+  next()
+})
+
 router.get(
   '/images/:id',
-  param('id').isNumeric().exists(),
-  checkErrors,
   (req, res) => {
-    const path = `./cards/${req.params.id}.png`
-    if (!fs.existsSync(path)) {
-      res.sendStatus(404)
-      return
-    }
-    const file = fs.readFileSync(path)
+    const file = fs.readFileSync(`./cards/${req.params.id}.png`)
     res.contentType('png').status(200).send(file)
   }
 )
+
+// router.delete('/images/:id', (req, res) => {
+//   fs.unlinkSync(`./cards/${req.params.id}.png`)
+//   res.sendStatus(204)
+// })
 
 export default router
