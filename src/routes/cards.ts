@@ -47,7 +47,7 @@ router.put(
   (req, res) => {
     void (async () => {
       try {
-        await db.insertInto('card').values({ card_id: Number(req.params.id), rarity: req.body.rarity }).execute()
+        await db.insertInto('card').values({ id: Number(req.params.id), rarity: req.body.rarity }).execute()
         res.sendStatus(201)
       } catch (error) {
         res.sendStatus(500)
