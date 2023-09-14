@@ -33,7 +33,19 @@ const router = Router()
 
 router.get('/', (req, res) => {
   void (async () => {
-    const result = await db.selectFrom('card').selectAll().orderBy('card.card_id').execute()
+    const cards = await db.selectFrom('card')
+      .selectAll()
+      .orderBy('card.id').execute()
+
+    const result = await Promise.all(cards.map(async card => {
+      const tags = await db.selectFrom('card_has_tag')
+        .select(['card_has_tag.tag'])
+        .where('card_has_tag.card', '=', card.id)
+        .execute()
+
+      return { tags: tags.map(e => e.tag), ...card }
+    }))
+
     res.send(result)
   })()
 })

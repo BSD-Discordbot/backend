@@ -3,6 +3,7 @@ import express from 'express'
 import cors from 'cors'
 import { dbReady } from './db'
 import cards from './routes/cards'
+import tags from './routes/tags'
 import upgrades from './routes/upgrades'
 dotenv.config()
 
@@ -16,6 +17,7 @@ app.get('/', (req, res) => {
   res.send('yahoo')
 })
 app.use('/cards', cards)
+app.use('/tags', tags)
 app.use('/upgrades', upgrades)
 
 export default new Promise((resolve) => {
