@@ -99,6 +99,30 @@ router.get(
   }
 )
 
+router.put(
+  '/:id/tags',
+  (req, res) => {
+    void (async () => {
+      const cardId = Number(req.params.id)
+      if (isNaN(cardId)) {
+        res.status(400).send()
+        return
+      }
+      if (Array.isArray(req.body)) {
+        if (req.body.every<number>((e): e is number => !isNaN(Number(e)))) {
+          await db.deleteFrom('card_has_tag').where('card_has_tag.card', '=', cardId).execute()
+          if (req.body.length > 0) {
+            await db.insertInto('card_has_tag').values(req.body.map<{ card: number, tag: number }>(e => ({ card: cardId, tag: e }))).execute()
+          }
+          res.status(200).send()
+          return
+        }
+      }
+      res.status(400).send()
+    })()
+  }
+)
+
 // router.delete('/images/:id', (req, res) => {
 //   fs.unlinkSync(`./cards/${req.params.id}.png`)
 //   res.sendStatus(204)

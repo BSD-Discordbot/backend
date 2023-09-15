@@ -16,8 +16,20 @@ router.post('/', (req, res) => {
       res.status(400).send()
       return
     }
-    const result = await db.insertInto('tag').values({ name: req.body.name }).execute()
-    res.send(result)
+    const result = await db.insertInto('tag').values({ name: req.body.name }).returningAll().execute()
+    res.send(result[0])
+  })()
+})
+
+router.delete('/:id', (req, res) => {
+  const id = Number(req.params.id)
+  if (isNaN(id)) {
+    res.status(400).send()
+    return
+  }
+  void (async () => {
+    await db.deleteFrom('tag').where('id', '=', id).execute()
+    res.status(200).send()
   })()
 })
 
