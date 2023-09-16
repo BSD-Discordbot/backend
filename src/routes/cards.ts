@@ -8,6 +8,7 @@ import fs from 'node:fs'
 import { body, param, validationResult } from 'express-validator'
 import multer from 'multer'
 import db from '../db'
+import type Database from 'src/db/model'
 
 function checkErrors (req: Request, res: Response, next: NextFunction) {
   const result = validationResult(req)
@@ -33,11 +34,11 @@ const router = Router()
 
 router.get('/', (req, res) => {
   void (async () => {
-    const cards = await db.selectFrom('card')
+    const cardArray = await db.selectFrom('card')
       .selectAll()
       .orderBy('card.id').execute()
 
-    const result = await Promise.all(cards.map(async card => {
+    const result = await Promise.all(cardArray.map(async card => {
       const tags = await db.selectFrom('card_has_tag')
         .select(['card_has_tag.tag'])
         .where('card_has_tag.card', '=', card.id)
@@ -46,7 +47,12 @@ router.get('/', (req, res) => {
       return { tags: tags.map(e => e.tag), ...card }
     }))
 
-    res.send(result)
+    const cards: Record<number, Omit<Database['card'], 'id'>> = {}
+    result.forEach(c => {
+      const { id, ...card } = c
+      cards[id] = card
+    })
+    res.send(cards)
   })()
 })
 

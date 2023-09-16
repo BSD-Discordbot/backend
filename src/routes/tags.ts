@@ -1,12 +1,18 @@
 import { Router } from 'express'
 import db from '../db'
+import type Database from 'src/db/model'
 
 const router = Router()
 
 router.get('/', (req, res) => {
   void (async () => {
     const result = await db.selectFrom('tag').selectAll().execute()
-    res.send(result)
+    const tags: Record<number, Omit<Database['tag'], 'id'>> = {}
+    result.forEach(e => {
+      const { id, ...tag } = e
+      tags[id] = tag
+    })
+    res.send(tags)
   })()
 })
 
@@ -17,7 +23,7 @@ router.post('/', (req, res) => {
       return
     }
     const result = await db.insertInto('tag').values({ name: req.body.name }).returningAll().execute()
-    res.send(result[0])
+    res.send(result[0].id)
   })()
 })
 
