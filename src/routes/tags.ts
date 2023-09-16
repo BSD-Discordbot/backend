@@ -27,7 +27,7 @@ router.post('/', (req, res) => {
       .values({ name: req.body.name })
       .returningAll()
       .execute()
-    res.send(result[0].id)
+    res.send(JSON.stringify(result[0].id))
   })()
 })
 
