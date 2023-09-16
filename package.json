@@ -41,7 +41,6 @@
   "scripts": {
     "build": "npx tsc",
     "start": "node out/index.js",
-    "documentation": "redocly build-docs .\\docs\\v2.yml --output=docs\\index.html",
     "test": "jest --runInBand"
   }
 }

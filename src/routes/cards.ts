@@ -1,9 +1,4 @@
-import {
-  type NextFunction,
-  type Request,
-  type Response,
-  Router
-} from 'express'
+import { type NextFunction, type Request, type Response, Router } from 'express'
 import fs from 'node:fs'
 import { body, param, validationResult } from 'express-validator'
 import multer from 'multer'
@@ -34,21 +29,26 @@ const router = Router()
 
 router.get('/', (req, res) => {
   void (async () => {
-    const cardArray = await db.selectFrom('card')
+    const cardArray = await db
+      .selectFrom('card')
       .selectAll()
-      .orderBy('card.id').execute()
+      .orderBy('card.id')
+      .execute()
 
-    const result = await Promise.all(cardArray.map(async card => {
-      const tags = await db.selectFrom('card_has_tag')
-        .select(['card_has_tag.tag'])
-        .where('card_has_tag.card', '=', card.id)
-        .execute()
+    const result = await Promise.all(
+      cardArray.map(async (card) => {
+        const tags = await db
+          .selectFrom('card_has_tag')
+          .select(['card_has_tag.tag'])
+          .where('card_has_tag.card', '=', card.id)
+          .execute()
 
-      return { tags: tags.map(e => e.tag), ...card }
-    }))
+        return { tags: tags.map((e) => e.tag), ...card }
+      })
+    )
 
     const cards: Record<number, Omit<Database['card'], 'id'>> = {}
-    result.forEach(c => {
+    result.forEach((c) => {
       const { id, ...card } = c
       cards[id] = card
     })
@@ -65,7 +65,10 @@ router.put(
   (req, res) => {
     void (async () => {
       try {
-        await db.insertInto('card').values({ id: Number(req.params.id), rarity: req.body.rarity }).execute()
+        await db
+          .insertInto('card')
+          .values({ id: Number(req.params.id), rarity: req.body.rarity })
+          .execute()
         res.sendStatus(201)
       } catch (error) {
         res.sendStatus(500)
@@ -81,13 +84,9 @@ router.put(
 
 router.all('/images/:id', param('id').exists().isInt({ min: 0 }), checkErrors)
 
-router.put(
-  '/images/:id',
-  upload.single('image'),
-  (req, res) => {
-    res.sendStatus(201)
-  }
-)
+router.put('/images/:id', upload.single('image'), (req, res) => {
+  res.sendStatus(201)
+})
 
 router.all('/images/:id', (req, res, next) => {
   if (!fs.existsSync(`./cards/${req.params.id}.png`)) {
@@ -97,37 +96,42 @@ router.all('/images/:id', (req, res, next) => {
   next()
 })
 
-router.get(
-  '/images/:id',
-  (req, res) => {
-    const file = fs.readFileSync(`./cards/${req.params.id}.png`)
-    res.contentType('png').status(200).send(file)
-  }
-)
+router.get('/images/:id', (req, res) => {
+  const file = fs.readFileSync(`./cards/${req.params.id}.png`)
+  res.contentType('png').status(200).send(file)
+})
 
-router.put(
-  '/:id/tags',
-  (req, res) => {
-    void (async () => {
-      const cardId = Number(req.params.id)
-      if (isNaN(cardId)) {
-        res.status(400).send()
-        return
-      }
-      if (Array.isArray(req.body)) {
-        if (req.body.every<number>((e): e is number => !isNaN(Number(e)))) {
-          await db.deleteFrom('card_has_tag').where('card_has_tag.card', '=', cardId).execute()
-          if (req.body.length > 0) {
-            await db.insertInto('card_has_tag').values(req.body.map<{ card: number, tag: number }>(e => ({ card: cardId, tag: e }))).execute()
-          }
-          res.status(200).send()
-          return
-        }
-      }
+router.put('/:id/tags', (req, res) => {
+  void (async () => {
+    // Type check
+    const cardId = Number(req.params.id)
+    if (
+      isNaN(cardId) ||
+      !Array.isArray(req.body) ||
+      !req.body.every<number>((e): e is number => !isNaN(Number(e)))
+    ) {
       res.status(400).send()
-    })()
-  }
-)
+      return
+    }
+    // logic
+    await db
+      .deleteFrom('card_has_tag')
+      .where('card_has_tag.card', '=', cardId)
+      .execute()
+    if (req.body.length > 0) {
+      await db
+        .insertInto('card_has_tag')
+        .values(
+          req.body.map<{ card: number, tag: number }>((e) => ({
+            card: cardId,
+            tag: e
+          }))
+        )
+        .execute()
+    }
+    res.status(200).send()
+  })()
+})
 
 // router.delete('/images/:id', (req, res) => {
 //   fs.unlinkSync(`./cards/${req.params.id}.png`)

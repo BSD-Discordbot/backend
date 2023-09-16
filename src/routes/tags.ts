@@ -8,7 +8,7 @@ router.get('/', (req, res) => {
   void (async () => {
     const result = await db.selectFrom('tag').selectAll().execute()
     const tags: Record<number, Omit<Database['tag'], 'id'>> = {}
-    result.forEach(e => {
+    result.forEach((e) => {
       const { id, ...tag } = e
       tags[id] = tag
     })
@@ -22,7 +22,11 @@ router.post('/', (req, res) => {
       res.status(400).send()
       return
     }
-    const result = await db.insertInto('tag').values({ name: req.body.name }).returningAll().execute()
+    const result = await db
+      .insertInto('tag')
+      .values({ name: req.body.name })
+      .returningAll()
+      .execute()
     res.send(result[0].id)
   })()
 })
