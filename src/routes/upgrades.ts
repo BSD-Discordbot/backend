@@ -6,7 +6,14 @@ const router = Router()
 router.get('/', (req, res) => {
   void (async () => {
     const result = await db.selectFrom('card_upgrade').selectAll().execute()
-    res.send(result)
+    const upgrades: Record<number, Record<number, number>> = {}
+    result.forEach((r) => {
+      if (!(r.card in upgrades)) {
+        upgrades[r.card] = {} satisfies Record<number, number>
+      }
+      upgrades[r.card][r.requirement] = r.amount
+    })
+    res.send(upgrades)
   })()
 })
 
