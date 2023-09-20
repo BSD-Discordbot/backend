@@ -133,6 +133,38 @@ router.put('/:id/tags', (req, res) => {
   })()
 })
 
+router.put('/:id/events', (req, res) => {
+  void (async () => {
+    // Type check
+    const cardId = Number(req.params.id)
+    if (
+      isNaN(cardId) ||
+      !Array.isArray(req.body) ||
+      !req.body.every<number>((e): e is number => !isNaN(Number(e)))
+    ) {
+      res.status(400).send()
+      return
+    }
+    // logic
+    await db
+      .deleteFrom('event_has_card')
+      .where('event_has_card.card', '=', cardId)
+      .execute()
+    if (req.body.length > 0) {
+      await db
+        .insertInto('event_has_card')
+        .values(
+          req.body.map<{ card: number, event: number }>((e) => ({
+            card: cardId,
+            event: e
+          }))
+        )
+        .execute()
+    }
+    res.status(200).send()
+  })()
+})
+
 // router.delete('/images/:id', (req, res) => {
 //   fs.unlinkSync(`./cards/${req.params.id}.png`)
 //   res.sendStatus(204)

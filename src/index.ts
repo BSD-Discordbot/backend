@@ -5,6 +5,7 @@ import { dbReady } from './db'
 import cards from './routes/cards'
 import tags from './routes/tags'
 import upgrades from './routes/upgrades'
+import events from './routes/event'
 dotenv.config()
 
 const app = express()
@@ -19,6 +20,7 @@ app.get('/', (req, res) => {
 app.use('/cards', cards)
 app.use('/tags', tags)
 app.use('/upgrades', upgrades)
+app.use('/events', events)
 
 export default new Promise((resolve) => {
   void dbReady().then((e) => {
